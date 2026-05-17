@@ -252,6 +252,8 @@ globalThis.browser = await agent.browsers.get("extension");
 
 Use the browser bound to `browser` for tasks in this skill.
 
+The extension backend may still be labeled `chrome` or `Chrome` in runtime metadata for historical Chromium-extension compatibility. Do not treat that label as proof that Google Chrome was selected; use the browser-specific setup checks above to distinguish Chrome from Microsoft Edge.
+
 ## Troubleshooting
 
 IMPORTANT: do NOT attempt to dig through source code or control the browser through unrelated mechanisms before attempting the workflow for the selected backend. If you run into issues, follow the steps below FIRST.
