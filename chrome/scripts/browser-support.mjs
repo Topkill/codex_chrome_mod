@@ -5,10 +5,19 @@ import path from "node:path";
 import process from "node:process";
 
 export const BROWSER_ENV = "CODEX_BROWSER";
+export const BROWSER_EXECUTABLE_PATH_ENV = "CODEX_BROWSER_EXECUTABLE_PATH";
 export const BROWSER_USER_DATA_DIR_ENV = "CODEX_BROWSER_USER_DATA_DIR";
 export const BROWSER_PREFERENCES_PATH_ENV = "CODEX_BROWSER_PREFERENCES_PATH";
 export const BROWSER_NATIVE_HOST_MANIFEST_PATH_ENV =
   "CODEX_BROWSER_NATIVE_HOST_MANIFEST_PATH";
+export const CUSTOM_CHROME_EXECUTABLE_PATH_ENV =
+  "CODEX_CUSTOM_CHROME_EXECUTABLE_PATH";
+export const CUSTOM_CHROME_USER_DATA_DIR_ENV =
+  "CODEX_CUSTOM_CHROME_USER_DATA_DIR";
+export const CUSTOM_CHROME_PREFERENCES_PATH_ENV =
+  "CODEX_CUSTOM_CHROME_PREFERENCES_PATH";
+export const CUSTOM_CHROME_NATIVE_HOST_MANIFEST_PATH_ENV =
+  "CODEX_CUSTOM_CHROME_NATIVE_HOST_MANIFEST_PATH";
 export const CHROME_USER_DATA_DIR_ENV = "CODEX_CHROME_USER_DATA_DIR";
 export const CHROME_PREFERENCES_PATH_ENV = "CODEX_CHROME_PREFERENCES_PATH";
 export const CHROME_NATIVE_HOST_MANIFEST_PATH_ENV =
@@ -122,6 +131,41 @@ export const BROWSER_TARGETS = [
     },
     macosAppPathFragment: "/Microsoft Edge.app/Contents/",
   },
+  {
+    id: "custom_chrome",
+    name: "Custom Chrome",
+    shortName: "Custom Chrome",
+    envKey: "CUSTOM_CHROME",
+    requiresExplicitSelection: true,
+    requiresExecutablePath: true,
+    requiresUserConfiguration: true,
+    bundleIds: [],
+    appNames: [],
+    commands: [],
+    windowsExecutable: "chrome.exe",
+    windowsCommand: "chrome",
+    windowsAppPathKeys: [],
+    windowsInstallSubPath: [],
+    windowsUninstallKeys: [],
+    windowsProgIdPrefixes: [],
+    nativeHostRegistryKeyPrefix:
+      "HKCU\\Software\\Chromium\\NativeMessagingHosts",
+    userDataDirectoryParts: {
+      darwin: [],
+      win32: [],
+      linux: [],
+    },
+    nativeHostDirectoryParts: {
+      darwin: [],
+      linux: [],
+    },
+    processNames: {
+      darwin: [],
+      win32: [],
+      linux: [],
+    },
+    macosAppPathFragment: "",
+  },
 ];
 
 export function runCommand(args) {
@@ -212,13 +256,25 @@ export function normalizeBrowserId(value) {
   )
     return "edge";
   if (normalized === "chrome") return "chrome";
+  if (
+    normalized === "custom" ||
+    normalized === "custom-chrome" ||
+    normalized === "custom_chrome" ||
+    normalized === "chromium"
+  )
+    return "custom_chrome";
 
-  throw new Error(`Unsupported browser "${value}". Use chrome, edge, or all.`);
+  throw new Error(
+    `Unsupported browser "${value}". Use chrome, edge, custom_chrome, or all.`,
+  );
 }
 
 export function browserTargetsForSelection(browserId, env = process.env) {
   const selected = browserId || normalizeBrowserId(env[BROWSER_ENV]);
-  if (selected == null || selected === "all") return BROWSER_TARGETS;
+  if (selected == null || selected === "all")
+    return BROWSER_TARGETS.filter(
+      (browser) => browser.requiresExplicitSelection !== true,
+    );
 
   const target = BROWSER_TARGETS.find((browser) => browser.id === selected);
   if (!target) throw new Error(`Unsupported browser "${selected}".`);
@@ -243,9 +299,31 @@ export function browserEnvValue(browser, suffix, env = process.env) {
   return generic || null;
 }
 
+export function browserExecutablePathOverride(browser, env = process.env) {
+  const override = browserEnvValue(browser, "EXECUTABLE_PATH", env);
+  return override ? path.resolve(override) : null;
+}
+
+export function requireCustomChromeExecutablePath(browser, env = process.env) {
+  const override = browserExecutablePathOverride(browser, env);
+  if (override) return override;
+  if (browser.requiresExecutablePath) {
+    throw new Error(
+      `${browser.name} requires ${CUSTOM_CHROME_EXECUTABLE_PATH_ENV} or ${BROWSER_EXECUTABLE_PATH_ENV}.`,
+    );
+  }
+  return null;
+}
+
 export function resolveBrowserUserDataDirectory(browser, env = process.env) {
   const override = browserEnvValue(browser, "USER_DATA_DIR", env);
   if (override) return path.resolve(override);
+
+  if (browser.requiresUserConfiguration) {
+    throw new Error(
+      `${browser.name} requires ${CUSTOM_CHROME_USER_DATA_DIR_ENV}, ${CUSTOM_CHROME_PREFERENCES_PATH_ENV}, ${BROWSER_USER_DATA_DIR_ENV}, or ${BROWSER_PREFERENCES_PATH_ENV}.`,
+    );
+  }
 
   if (process.platform === "darwin") {
     return path.join(os.homedir(), ...browser.userDataDirectoryParts.darwin);
@@ -528,9 +606,15 @@ export function buildExtensionResult(statuses) {
 }
 
 export function windowsBrowserInstallPaths(browser) {
-  const candidates = browser.windowsAppPathKeys
-    .map((keyPath) => readWindowsRegistryValue(keyPath, null))
-    .filter(Boolean);
+  const candidates = [];
+  const executablePathOverride = browserExecutablePathOverride(browser);
+  if (executablePathOverride) candidates.push(executablePathOverride);
+
+  candidates.push(
+    ...browser.windowsAppPathKeys
+      .map((keyPath) => readWindowsRegistryValue(keyPath, null))
+      .filter(Boolean),
+  );
 
   const localAppData =
     process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
@@ -541,6 +625,7 @@ export function windowsBrowserInstallPaths(browser) {
   ].filter(Boolean);
 
   for (const root of standardRoots) {
+    if (browser.windowsInstallSubPath.length === 0) continue;
     candidates.push(path.join(root, ...browser.windowsInstallSubPath));
   }
 
@@ -729,6 +814,21 @@ export function findCommandBrowsers() {
   const found = new Map();
 
   for (const browser of BROWSER_TARGETS) {
+    const executablePathOverride = browserExecutablePathOverride(browser);
+    if (executablePathOverride) {
+      if (!fs.existsSync(executablePathOverride)) continue;
+      found.set(browser.name, {
+        id: browser.id,
+        name: browser.name,
+        command: path.basename(executablePathOverride),
+        path: executablePathOverride,
+        bundle_id: browser.bundleIds[0] || null,
+        version: null,
+      });
+      continue;
+    }
+    if (browser.requiresExplicitSelection) continue;
+
     for (const command of browser.commands) {
       const executable = commandPath(command);
       if (!executable) continue;
@@ -752,6 +852,21 @@ export function findWindowsApps() {
   const found = new Map();
 
   for (const browser of BROWSER_TARGETS) {
+    const executablePathOverride = browserExecutablePathOverride(browser);
+    if (executablePathOverride) {
+      if (!fs.existsSync(executablePathOverride)) continue;
+      found.set(executablePathOverride.toLowerCase(), {
+        id: browser.id,
+        name: browser.name,
+        command: path.basename(executablePathOverride),
+        path: executablePathOverride,
+        bundle_id: null,
+        version: null,
+      });
+      continue;
+    }
+    if (browser.requiresExplicitSelection) continue;
+
     const version = windowsBrowserVersion(browser);
     for (const executablePath of windowsBrowserInstallPaths(browser)) {
       if (
@@ -941,6 +1056,14 @@ export function isMacosBrowserApp(browser, appPath, allowNamedFallback = false) 
 }
 
 export function findWindowsBrowserExecutable(browser) {
+  const executablePathOverride = requireCustomChromeExecutablePath(browser);
+  if (executablePathOverride) {
+    if (fs.existsSync(executablePathOverride)) return executablePathOverride;
+    throw new Error(
+      `${browser.name} executable does not exist: ${executablePathOverride}`,
+    );
+  }
+
   for (const executablePath of windowsBrowserInstallPaths(browser)) {
     if (path.basename(executablePath).toLowerCase() === browser.windowsExecutable)
       return executablePath;
@@ -955,6 +1078,19 @@ export function getOpenBrowserCommand(browser, profileDirectory) {
     "--new-window",
     ABOUT_BLANK_URL,
   ];
+  const executablePathOverride = requireCustomChromeExecutablePath(browser);
+
+  if (executablePathOverride && process.platform !== "win32") {
+    if (!fs.existsSync(executablePathOverride)) {
+      throw new Error(
+        `${browser.name} executable does not exist: ${executablePathOverride}`,
+      );
+    }
+    return {
+      command: executablePathOverride,
+      args: browserArgs,
+    };
+  }
 
   if (process.platform === "darwin") {
     return {
@@ -1055,6 +1191,21 @@ export function getDefaultWindowsManifestPath(expectedHostName) {
   );
 }
 
+export function getDefaultNativeHostManifestPath(expectedHostName) {
+  if (process.platform === "win32")
+    return getDefaultWindowsManifestPath(expectedHostName);
+
+  const chrome = getBrowserById("chrome");
+  const parts = chrome?.nativeHostDirectoryParts?.[process.platform];
+  if (!parts) {
+    throw new Error(
+      `Unsupported platform for default native host manifest path: ${process.platform}.`,
+    );
+  }
+
+  return path.join(os.homedir(), ...parts, `${expectedHostName}.json`);
+}
+
 export function getNativeHostManifestLocation(browser, expectedHostName) {
   const override = nativeHostManifestOverride(browser);
   if (override) {
@@ -1062,6 +1213,17 @@ export function getNativeHostManifestLocation(browser, expectedHostName) {
       browser: browser.id,
       browserName: browser.name,
       manifestPath: path.resolve(override),
+      registryKey: null,
+      registryManifestPath: null,
+      registryKeyExists: null,
+    };
+  }
+
+  if (browser.id === "custom_chrome" && process.platform !== "win32") {
+    return {
+      browser: browser.id,
+      browserName: browser.name,
+      manifestPath: getDefaultNativeHostManifestPath(expectedHostName),
       registryKey: null,
       registryManifestPath: null,
       registryKeyExists: null,
@@ -1362,6 +1524,94 @@ export function browserForProcessName(processName, targets) {
 }
 
 export function findRunningWindowsBrowserProcesses(targets) {
+  const pathTargets = targets.filter((browser) => {
+    return (
+      browserExecutablePathOverride(browser) != null ||
+      browser.requiresExecutablePath === true
+    );
+  });
+  const imageNameTargets = targets.filter(
+    (browser) => !pathTargets.includes(browser),
+  );
+  const pathProcesses =
+    pathTargets.length > 0
+      ? findRunningWindowsBrowserProcessesByExecutablePath(pathTargets)
+      : [];
+  const imageNameProcesses =
+    imageNameTargets.length > 0
+      ? findRunningWindowsBrowserProcessesByImageName(imageNameTargets)
+      : [];
+
+  return [...pathProcesses, ...imageNameProcesses];
+}
+
+export function findRunningWindowsBrowserProcessesByExecutablePath(targets) {
+  const executableToBrowser = new Map();
+  for (const browser of targets) {
+    const executablePath = requireCustomChromeExecutablePath(browser);
+    if (!executablePath) continue;
+    executableToBrowser.set(path.resolve(executablePath).toLowerCase(), browser);
+  }
+  if (executableToBrowser.size === 0) return [];
+
+  const output = runProcessCommand("powershell.exe", [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-Command",
+    getWindowsProcessQuery([...executableToBrowser.keys()]),
+  ]);
+  const processes = [];
+
+  for (const entry of parseWindowsProcessJson(output)) {
+    const executablePath =
+      typeof entry.ExecutablePath === "string"
+        ? path.resolve(entry.ExecutablePath).toLowerCase()
+        : null;
+    const browser = executablePath
+      ? executableToBrowser.get(executablePath)
+      : null;
+    if (!browser) continue;
+
+    processes.push({
+      browser: browser.id,
+      browserName: browser.name,
+      pid: Number(entry.ProcessId),
+      process_name: entry.Name,
+      command: entry.ExecutablePath,
+    });
+  }
+
+  return processes;
+}
+
+export function getWindowsProcessQuery(executablePaths) {
+  const names = [
+    ...new Set(
+      executablePaths.map((executablePath) =>
+        path.basename(executablePath).toLowerCase(),
+      ),
+    ),
+  ]
+    .map((name) => `'${name.replaceAll("'", "''")}'`)
+    .join(",");
+  return [
+    `$names=@(${names}); Get-CimInstance Win32_Process`,
+    "Where-Object { $names -contains $_.Name.ToLowerInvariant() }",
+    "Select-Object ProcessId,Name,ExecutablePath",
+    "ConvertTo-Json -Compress",
+  ].join(" | ");
+}
+
+export function parseWindowsProcessJson(output) {
+  if (!output) return [];
+  const trimmed = output.trim();
+  if (!trimmed) return [];
+  const parsed = JSON.parse(trimmed);
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+export function findRunningWindowsBrowserProcessesByImageName(targets) {
   const output = runProcessCommand("tasklist", ["/fo", "csv", "/nh"]);
   const executableToBrowser = new Map(
     targets.map((browser) => [

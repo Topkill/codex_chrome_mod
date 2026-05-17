@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* global console */
-/* Detect whether Google Chrome or Microsoft Edge is currently running. */
+/* Detect whether the selected Chrome browser is currently running. */
 
 let process;
 let support;
@@ -18,7 +18,7 @@ async function loadSupport() {
 
 function usage() {
   console.error(
-    "Usage: scripts/chrome-is-running.js [--check] [--json] [--browser chrome|edge|all]",
+    "Usage: scripts/chrome-is-running.js [--check] [--json] [--browser chrome|edge|custom_chrome|all]",
   );
 }
 
@@ -67,12 +67,12 @@ function buildResult(targets, processes) {
 
 function printTextReport(result, check) {
   if (check) {
-    console.log("Chrome/Edge running check");
+    console.log("Chrome running check");
     console.log(`status: ${result.running ? "ok" : "not running"}`);
     console.log("");
   }
 
-  console.log(`Chrome/Edge running: ${result.running ? "yes" : "no"}`);
+  console.log(`Chrome running: ${result.running ? "yes" : "no"}`);
   for (const browser of result.browsers) {
     console.log(`  ${browser.browserName}: ${browser.running ? "yes" : "no"}`);
     for (const browserProcess of browser.processes) {

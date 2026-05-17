@@ -17,17 +17,20 @@ async function loadSupport() {
 
 function usage() {
   console.error(
-    "Usage: scripts/check-native-host-manifest.js [--json] [--browser chrome|edge|all]",
+    "Usage: scripts/check-native-host-manifest.js [--json] [--browser chrome|edge|custom_chrome|all]",
   );
   console.error("");
   console.error(
     `Expected extension ID is read from scripts/${support.EXTENSION_ID_CONFIG_FILENAME}.`,
   );
   console.error(
-    `Optional browser selector: ${support.BROWSER_ENV}=chrome|edge|all`,
+    `Optional browser selector: ${support.BROWSER_ENV}=chrome|edge|custom_chrome|all`,
   );
   console.error(
     `Optional manifest-file override: ${support.BROWSER_NATIVE_HOST_MANIFEST_PATH_ENV}=/path/to/native-host.json`,
+  );
+  console.error(
+    `Optional Custom Chrome manifest-file override: ${support.CUSTOM_CHROME_NATIVE_HOST_MANIFEST_PATH_ENV}=/path/to/native-host.json`,
   );
   console.error(
     `Optional Chrome manifest-file override: ${support.CHROME_NATIVE_HOST_MANIFEST_PATH_ENV}=/path/to/native-host.json`,

@@ -22,7 +22,7 @@ function usage() {
 
 function printTextReport(inventory, check) {
   if (check) {
-    console.log("Chrome/Edge plugin setup/configuration check");
+    console.log("Chrome plugin setup/configuration check");
     console.log("status: ok");
     console.log("");
   }

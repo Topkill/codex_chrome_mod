@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* global console */
-/* Open a Chrome or Edge window for the profile selected by plugin checks. */
+/* Open a Chrome window for the profile selected by plugin checks. */
 
 let path;
 let process;
@@ -21,14 +21,26 @@ async function loadSupport() {
 
 function usage() {
   console.error(
-    "Usage: scripts/open-chrome-window.js [--dry-run] [--json] [--browser chrome|edge|all]",
+    "Usage: scripts/open-chrome-window.js [--dry-run] [--json] [--browser chrome|edge|custom_chrome|all]",
   );
   console.error("");
   console.error(
-    `Optional browser selector: ${support.BROWSER_ENV}=chrome|edge|all`,
+    `Optional browser selector: ${support.BROWSER_ENV}=chrome|edge|custom_chrome|all`,
+  );
+  console.error(
+    `Optional browser executable override: ${support.BROWSER_EXECUTABLE_PATH_ENV}=/tmp/chrome`,
+  );
+  console.error(
+    `Optional Custom Chrome executable override: ${support.CUSTOM_CHROME_EXECUTABLE_PATH_ENV}=/tmp/chrome`,
   );
   console.error(
     `Optional profile-root override: ${support.BROWSER_USER_DATA_DIR_ENV}=/tmp/browser-root`,
+  );
+  console.error(
+    `Optional Custom Chrome profile-root override: ${support.CUSTOM_CHROME_USER_DATA_DIR_ENV}=/tmp/custom-chrome-root`,
+  );
+  console.error(
+    `Optional Custom Chrome preferences-file override: ${support.CUSTOM_CHROME_PREFERENCES_PATH_ENV}=/tmp/Profile/Preferences`,
   );
   console.error(
     `Optional Chrome profile-root override: ${support.CHROME_USER_DATA_DIR_ENV}=/tmp/chrome-root`,

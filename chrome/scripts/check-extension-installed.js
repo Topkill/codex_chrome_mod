@@ -18,17 +18,29 @@ async function loadSupport() {
 function usage() {
   const config = support.loadExtensionConfig();
   console.error(
-    "Usage: scripts/check-extension-installed.js [--json] [--browser chrome|edge|all]",
+    "Usage: scripts/check-extension-installed.js [--json] [--browser chrome|edge|custom_chrome|all]",
   );
   console.error("");
   console.error(
     `Default extension ID is configured in scripts/${support.EXTENSION_ID_CONFIG_FILENAME} (${config.extensionId}).`,
   );
   console.error(
-    `Optional browser selector: ${support.BROWSER_ENV}=chrome|edge|all`,
+    `Optional browser selector: ${support.BROWSER_ENV}=chrome|edge|custom_chrome|all`,
+  );
+  console.error(
+    `Optional browser executable override: ${support.BROWSER_EXECUTABLE_PATH_ENV}=/path/to/chrome`,
+  );
+  console.error(
+    `Optional Custom Chrome executable override: ${support.CUSTOM_CHROME_EXECUTABLE_PATH_ENV}=/path/to/chrome`,
   );
   console.error(
     `Optional profile-root override: ${support.BROWSER_USER_DATA_DIR_ENV}=/path/to/browser-root`,
+  );
+  console.error(
+    `Optional Custom Chrome profile-root override: ${support.CUSTOM_CHROME_USER_DATA_DIR_ENV}=/path/to/browser-root`,
+  );
+  console.error(
+    `Optional Custom Chrome preferences-file override: ${support.CUSTOM_CHROME_PREFERENCES_PATH_ENV}=/path/to/Profile/Preferences`,
   );
   console.error(
     `Optional Chrome profile-root override: ${support.CHROME_USER_DATA_DIR_ENV}=/path/to/chrome-root`,
