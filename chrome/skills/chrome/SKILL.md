@@ -1,26 +1,26 @@
 ---
-name: Chrome
-description: "Browser automation for the user's Chrome browser. Use for browser tasks that require the user's cookies, logged-in sessions, existing tabs, extensions, or remote authenticated sites."
+name: Chrome / Edge
+description: "Browser automation for the user's Chrome or Microsoft Edge browser. Use for browser tasks that require the user's cookies, logged-in sessions, existing tabs, extensions, or remote authenticated sites."
 ---
 
-# Chrome
+# Chrome / Edge
 
-Use this skill when the user mentions `@chrome`.
+Use this skill when the user mentions `@chrome` or asks to use the Chrome/Edge browser extension.
 
-Chrome is the routing touchpoint for the Codex Chrome Extension:
+Chrome / Edge is the routing touchpoint for the Codex browser extension:
 
-- Use Chrome directly for browser automation requests and for Chrome setup, detection, repair, or profile checks.
+- Use Chrome / Edge directly for browser automation requests and for browser setup, detection, repair, or profile checks.
 - For bare or general `@chrome` requests, do not ask a clarification question just because the request is ambiguous. Proceed with browser automation in this skill using the `chrome` backend.
-- If communication with the Codex Chrome Extension ultimately fails, even after checks, do not attempt to complete the user's request using applescript, bash commands or any other scripting methods.
+- If communication with the Codex browser extension ultimately fails, even after checks, do not attempt to complete the user's request using applescript, bash commands or any other scripting methods.
 - Do not install or repair the native host yourself. If native host setup appears broken, tell the user to reinstall the Chrome plugin from the Codex plugin UI.
 
 Before using this skill for the first time in the current conversation context, read the entire `SKILL.md` file in one read. Do not use a partial range such as `sed -n '1,220p'`; read through the end of the file. Do not mention this internal skill-loading step to the user.
 
-## Chrome Extension Checks
+## Chrome / Edge Extension Checks
 
-On the first Chrome-backed browser task in a session, try a lightweight browser-client call such as listing open tabs after bootstrap. If the call fails, wait 2 seconds and retry the same lightweight browser-client call once. Any non-error response means the extension is installed and working.
+On the first extension-backed browser task in a session, try a lightweight browser-client call such as listing open tabs after bootstrap. If the call fails, wait 2 seconds and retry the same lightweight browser-client call once. Any non-error response means the extension is installed and working.
 
-If browser-client still reports that it cannot communicate with Chrome after that retry, confirm that Chrome is installed, running and that the extension is present in the selected Chrome profile:
+If browser-client still reports that it cannot communicate with the browser after that retry, confirm that Chrome or Edge is installed, running, and that the extension is present in the selected browser profile:
 
 From the plugin root, use `node_repl` to run:
 
@@ -34,18 +34,18 @@ scripts/check-native-host-manifest.js --json
 Depending on the outcome follow the following checks. Be sure to ask the user permission when required, if it is stated in the check.
 
 
-### 1. Chrome is not installed
+### 1. Chrome / Edge is not installed
 
 Keep the first response short and non-technical unless the user asks for more information.
 
-If Chrome is not installed, then inform the user that this plugin only works with the Chrome browser.
+If neither Chrome nor Edge is installed, then inform the user that this plugin works with Google Chrome or Microsoft Edge.
 
 
-### 2. Chrome is not running
+### 2. Chrome / Edge is not running
 
 Keep the first response short and non-technical unless the user asks for more information.
 
-If Chrome is not running then ALWAYS ask the User if they would like to launch Chrome. ALWAYS wait for a user response before taking action.
+If neither selected browser is running then ALWAYS ask the User if they would like to launch Chrome or Edge. ALWAYS wait for a user response before taking action.
 
 
 ### 3. The native host manifest is not installed, or is invalid
@@ -55,31 +55,31 @@ Keep the first response short and non-technical unless the user asks for more in
 Do not install or repair the native host yourself. If native host setup appears broken, tell the user to reinstall the Chrome plugin from the Codex plugin UI.
 
 
-### 4. The Codex Chrome Extension is not installed
+### 4. The Codex browser extension is not installed
 
 Keep the first response short and non-technical unless the user asks for more information.
 
-If the Codex Chrome Extension is missing, tell the user:
+If the Codex browser extension is missing, tell the user:
 
-`Cannot communicate with the Codex Chrome Extension. Confirm that the extension is installed and enabled in Chrome.` 
+`Cannot communicate with the Codex browser extension. Confirm that the extension is installed and enabled in Chrome or Edge.` 
 
 Ask the User if you can open the Codex Chrome Extension webstore page so they can verify that the extension is installed. ALWAYS wait for a user response before taking action. ALWAYS refer to the extension as the [Codex Chrome Extension](https://chromewebstore.google.com/detail/codex/<<EXTENSION_ID>>), and not by it's extension ID.
 
 You can construct the URL of the Codex Chrome extension webstore page by appending the `extensionId` from `scripts/extension-id.json` to `https://chromewebstore.google.com/detail/codex/`.
 
 
-### 4. The Codex Chrome Extension is not enabled
+### 4. The Codex browser extension is not enabled
 
 Keep the first response short and non-technical unless the user asks for more information.
 
-If the Codex Chrome Extension is not enabled ask the User if you can open the Google Chrome Extension Manager so they can verify that the extension is enabled. ALWAYS wait for a user response before taking action. Always refer to the Google Chrome Extension Manager as [Google Chrome Extension Manager](chrome://extensions/).
+If the Codex browser extension is not enabled ask the User if you can open the browser extension manager so they can verify that the extension is enabled. ALWAYS wait for a user response before taking action. Refer to Chrome's extension manager as [Google Chrome Extension Manager](chrome://extensions/) and Edge's extension manager as [Microsoft Edge Extension Manager](edge://extensions/).
 
 
 ### 5. Codex Extension is installed and enabled, the manifest file is installed, but communication still fails
 
 Keep the first response short and non-technical unless the user asks for more information.
 
-If Chrome is running and the extension/native-host checks pass, ask the User if you can open a Chrome window for the selected Chrome profile and retry the connection. ALWAYS wait for a user response before taking action.
+If Chrome or Edge is running and the extension/native-host checks pass, ask the User if you can open a browser window for the selected profile and retry the connection. ALWAYS wait for a user response before taking action.
 
 If the User agrees, run:
 
@@ -91,10 +91,10 @@ Then wait 2 seconds and retry the browser-client setup once.
 
 After one successful setup check in a session, do not repeat extension detection unless browser-client reports an extension connection failure.
 
-If the issue is specifically the native host or extension-backed install path, or if communication still fails after opening a Chrome window and retrying setup once, tell the user to reinstall the Chrome plugin from the Codex plugin UI. Never import or run `scripts/installManifest.mjs` yourself.
+If the issue is specifically the native host or extension-backed install path, or if communication still fails after opening a browser window and retrying setup once, tell the user to reinstall the Chrome plugin from the Codex plugin UI. Never import or run `scripts/installManifest.mjs` yourself.
 
 
-## Chrome Error handling
+## Chrome / Edge Error handling
 
 ### File upload errors
 
@@ -102,7 +102,7 @@ Keep the first response short and non-technical unless the user asks for more in
 
 If file upload fails when using `playwright_file_chooser_set_files`, `set_files` or similar tell the user exactly this:
 
-`To enable file upload, go to chrome://extensions in Chrome, click Details under the Codex extension, and enable "Allow access to file URLs." See [here](https://developers.openai.com/codex/app/chrome-extension#upload-files) for details.`
+`To enable file upload, go to chrome://extensions in Chrome or edge://extensions in Edge, click Details under the Codex extension, and enable "Allow access to file URLs." See [here](https://developers.openai.com/codex/app/chrome-extension#upload-files) for details.`
 
 
 ## Commands
@@ -125,7 +125,7 @@ scripts/installed-browsers.js --json
 
 ### chrome-is-running.js
 
-This script checks whether Google Chrome is actively running. It exits `0` when Chrome is running, `1` when Chrome is not running, and `2` for usage or runtime errors.
+This script checks whether Google Chrome or Microsoft Edge is actively running. It exits `0` when either selected browser is running, `1` when not running, and `2` for usage or runtime errors. Use `--browser edge` or `CODEX_BROWSER=edge` to target Edge specifically.
 
 From the plugin root, use `node_repl` to run:
 
@@ -141,7 +141,7 @@ scripts/chrome-is-running.js --json
 
 ### open-chrome-window.js
 
-This script opens `about:blank` in a Google Chrome window for the same selected Chrome profile used by `check-extension-installed.js`. Use it only after the User gives permission.
+This script opens `about:blank` in a Chrome or Edge window for the same selected browser profile used by `check-extension-installed.js`. Use it only after the User gives permission.
 
 From the plugin root, use `node_repl` to run:
 
@@ -149,7 +149,7 @@ From the plugin root, use `node_repl` to run:
 scripts/open-chrome-window.js
 ```
 
-Use dry-run JSON output when another tool or script needs to verify the selected launch command without opening Chrome:
+Use dry-run JSON output when another tool or script needs to verify the selected launch command without opening the browser:
 
 ```
 scripts/open-chrome-window.js --dry-run --json
@@ -157,7 +157,7 @@ scripts/open-chrome-window.js --dry-run --json
 
 ### check-extension-installed.js
 
-This script checks whether the selected Google Chrome profile has the configured extension registered and present, either from installed version directories or a registered unpacked extension path. It exits `0` when installed and enabled, `1` when installed but not enabled, `2` when not installed, and `3` for usage or runtime errors.
+This script checks whether the selected Chrome or Edge profile has the configured extension registered and present, either from installed version directories or a registered unpacked extension path. It exits `0` when installed and enabled, `1` when installed but not enabled, `2` when not installed, and `3` for usage or runtime errors.
 
 From the plugin root, use `node_repl` to run:
 
@@ -171,11 +171,11 @@ Use JSON output when another tool or script needs structured data:
 scripts/check-extension-installed.js --json
 ```
 
-The check reads the configured extension ID from `scripts/extension-id.json`. It detects the Chrome profile from `Local State`, then falls back to the highest-numbered `Profile X` or `Default` directory with `Preferences`. For debugging or tests, override profile selection with `CODEX_CHROME_USER_DATA_DIR=/path/to/chrome-root` or `CODEX_CHROME_PREFERENCES_PATH=/path/to/Profile/Preferences`.
+The check reads the configured extension ID from `scripts/extension-id.json`. It detects the Chrome/Edge profile from `Local State`, then falls back to the highest-numbered `Profile X` or `Default` directory with `Preferences`. For debugging or tests, override browser selection with `CODEX_BROWSER=chrome|edge`; override profile selection with `CODEX_CHROME_USER_DATA_DIR=/path/to/chrome-root`, `CODEX_EDGE_USER_DATA_DIR=/path/to/edge-root`, or the corresponding `CODEX_*_PREFERENCES_PATH`.
 
 ### check-native-host-manifest.js
 
-This script checks whether the Chrome Native Messaging Host manifest exists for the configured native host name and allows the Chrome extension ID from `scripts/extension-id.json`. On Windows it also checks the Chrome NativeMessagingHosts registry key. It exits `0` when correct, `1` when missing or incorrect, and `2` for usage or runtime errors.
+This script checks whether the browser Native Messaging Host manifest exists for the configured native host name and allows the extension ID from `scripts/extension-id.json`. On Windows it checks both Chrome and Edge NativeMessagingHosts registry keys unless a browser is selected. It exits `0` when correct, `1` when missing or incorrect, and `2` for usage or runtime errors.
 
 From the plugin root, use `node_repl` to run:
 
@@ -189,7 +189,7 @@ Use JSON output when another tool or script needs structured data:
 scripts/check-native-host-manifest.js --json
 ```
 
-## Chrome Safety
+## Chrome / Edge Safety
 
 - Do not inspect browser cookies, local storage, profiles, passwords, or session stores.
 - Keep browser discovery read-only.
@@ -197,8 +197,8 @@ scripts/check-native-host-manifest.js --json
 
 ## User Tab Claiming
 
-- To take over an already-open Chrome tab, call `browser.user.openTabs()`, choose the matching returned tab by its visible title, URL, recency, and tab group, then pass that exact object to `browser.user.claimTab(tab)`.
-- Claiming moves the chosen Chrome tab into the current agent tab group and returns a normal controllable `Tab`. Reuse that returned tab for navigation, Playwright, screenshots, CUA, and content reads.
+- To take over an already-open Chrome or Edge tab, call `browser.user.openTabs()`, choose the matching returned tab by its visible title, URL, recency, and tab group, then pass that exact object to `browser.user.claimTab(tab)`.
+- Claiming moves the chosen browser tab into the current agent tab group and returns a normal controllable `Tab`. Reuse that returned tab for navigation, Playwright, screenshots, CUA, and content reads.
 - Do not guess tab ids. Only claim ids that came from the current `openTabs()` result.
 
 ## File uploads
@@ -227,8 +227,8 @@ If the task involves attaching a local file, check for a file input and try the 
 
 ## Tab Cleanup
 
-- Before ending a turn after Chrome browser work, call `browser.tabs.finalize({ keep })`.
-- Treat `browser.tabs.finalize({ keep })` as the final Chrome browser action of the turn. Do not call Chrome browser tools after finalizing. If more browser work is needed, do it before finalizing, then finalize once with the final tab disposition.
+- Before ending a turn after Chrome / Edge browser work, call `browser.tabs.finalize({ keep })`.
+- Treat `browser.tabs.finalize({ keep })` as the final browser action of the turn. Do not call Chrome / Edge browser tools after finalizing. If more browser work is needed, do it before finalizing, then finalize once with the final tab disposition.
 - Omit tabs by default. A tab is worth keeping only when the user needs that live page after the turn; otherwise leave it out of `keep`.
 - Omit research, search, source, intermediate, duplicate, blank, error, and login/navigation tabs after you have extracted what you need. If the user asked a question and the answer can be given in the thread, omit the tab even if it helped you answer.
 - Keep a tab with `status: "deliverable"` when the tab itself is a user-facing output or requested open page: for example a created/edited document, spreadsheet, slide deck, dashboard, checkout/cart, submitted form result, or a page the user explicitly asked to keep open or inspect directly. Deliverable tabs move to the shared `✅ Codex` tab group.
@@ -413,7 +413,7 @@ Use the guarded first-browser-cell pattern above when starting browser work. It 
 
 The ability to interact directly with the browser is exposed through the `browser-client` runtime via the `agent.browsers.*` API.
 
-Only the Node REPL `js` tool (`mcp__node_repl__js`) can be used to control the Chrome extension. Do not use external MCP browser-control tools, separate browser automation servers, or other browser skills for this surface. References to Playwright mean the in-skill `tab.playwright` API after browser-client setup.
+Only the Node REPL `js` tool (`mcp__node_repl__js`) can be used to control the browser extension. Do not use external MCP browser-control tools, separate browser automation servers, or other browser skills for this surface. References to Playwright mean the in-skill `tab.playwright` API after browser-client setup.
 
 ### How to use the API
 
